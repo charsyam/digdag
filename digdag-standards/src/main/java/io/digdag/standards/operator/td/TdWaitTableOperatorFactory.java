@@ -86,7 +86,7 @@ public class TdWaitTableOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             try (TDOperator op = TDOperator.fromConfig(params)) {
 

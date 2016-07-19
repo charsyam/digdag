@@ -60,7 +60,7 @@ public class RequireOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             Config config = request.getConfig();
             String workflowName = config.get("_command", String.class);

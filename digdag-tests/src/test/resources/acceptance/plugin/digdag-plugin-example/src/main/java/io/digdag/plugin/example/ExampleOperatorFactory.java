@@ -43,7 +43,7 @@ public class ExampleOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             Config params = request.getConfig().mergeDefault(
                     request.getConfig().getNestedOrGetEmpty("example"));

@@ -9,24 +9,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import com.google.inject.Inject;
-import com.google.common.base.*;
-import com.google.common.collect.*;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.digdag.client.config.Config;
 import io.digdag.client.config.ConfigException;
 import io.digdag.client.config.ConfigFactory;
-import io.digdag.core.workflow.Workflow;
 import io.digdag.core.workflow.WorkflowCompiler;
-import io.digdag.core.workflow.WorkflowTask;
-import io.digdag.core.repository.WorkflowDefinition;
 import io.digdag.core.log.TaskLogger;
 import io.digdag.core.log.TaskContextLogging;
 import io.digdag.core.log.LogLevel;
@@ -256,9 +250,13 @@ public class OperatorManager
         if (factory == null) {
             throw new ConfigException("Unknown task type: " + type);
         }
+
         Operator operator = factory.newTaskExecutor(workspacePath, mergedRequest);
 
-        return operator.run();
+        // TODO
+        TaskExecutionContext taskExecutionContext = new DefaultTaskExecutionContext();
+
+        return operator.run(taskExecutionContext);
     }
 
     private void heartbeat()

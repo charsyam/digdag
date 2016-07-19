@@ -12,9 +12,6 @@ import io.digdag.util.BaseOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.digdag.client.config.Config;
-import io.digdag.client.config.ConfigException;
-import com.treasuredata.client.model.TDJobRequest;
-import com.treasuredata.client.model.TDJobRequestBuilder;
 
 public class TdDdlOperatorFactory
         implements OperatorFactory
@@ -45,7 +42,7 @@ public class TdDdlOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             Config params = request.getConfig().mergeDefault(
                     request.getConfig().getNestedOrGetEmpty("td"));

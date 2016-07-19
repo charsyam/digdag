@@ -2,5 +2,5 @@ package io.digdag.spi;
 
 public interface Operator
 {
-    TaskResult run();
+    TaskResult run(TaskExecutionContext ctx);
 }

@@ -17,7 +17,10 @@ import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.common.annotations.VisibleForTesting;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.treasuredata.client.TDClient;
 import io.digdag.client.config.ConfigElement;
+import io.digdag.spi.SecretProvider;
+import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;
 import io.digdag.spi.Operator;
@@ -42,8 +45,6 @@ import org.msgpack.value.MapValue;
 import org.msgpack.value.RawValue;
 import org.msgpack.value.ValueFactory;
 
-import static io.digdag.standards.operator.td.TDOperator.escapeHiveTableName;
-import static io.digdag.standards.operator.td.TDOperator.escapePrestoTableName;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static io.digdag.spi.TaskExecutionException.buildExceptionErrorConfig;
 import static io.digdag.standards.operator.td.TDOperator.escapeHiveIdent;
@@ -139,9 +140,18 @@ public class TdOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
-            try (TDOperator op = TDOperator.fromConfig(params)) {
+            String database = params.get("database", String.class).trim();
+            if (database.isEmpty()) {
+                throw new ConfigException("Parameter 'database' is empty");
+            }
+
+            SecretProvider secretProvider = ctx.secrets();
+
+            String apikey = secretProvider.getSecret("apikey");
+
+            try (TDOperator op = TDOperator.fromConfig(params, apikey)) {
 
                 // Generate and store domain key before starting the job
                 if (!existingDomainKey.isPresent()) {

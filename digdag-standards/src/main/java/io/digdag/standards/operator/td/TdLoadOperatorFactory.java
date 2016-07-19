@@ -125,7 +125,7 @@ public class TdLoadOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             // TODO: TDOperator requires database to be configured but the database param is not necessary when using a connector session
 

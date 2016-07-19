@@ -15,7 +15,6 @@ import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;
 import io.digdag.spi.TemplateEngine;
 import io.digdag.util.BaseOperator;
-import org.msgpack.core.MessageTypeCastException;
 import org.msgpack.value.ArrayValue;
 import org.msgpack.value.Value;
 import org.slf4j.Logger;
@@ -85,7 +84,7 @@ public class TdWaitOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             try (TDOperator op = TDOperator.fromConfig(params)) {
 

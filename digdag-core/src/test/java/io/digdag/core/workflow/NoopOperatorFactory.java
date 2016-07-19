@@ -36,7 +36,7 @@ public class NoopOperatorFactory
         }
 
         @Override
-        public TaskResult run()
+        public TaskResult run(TaskExecutionContext ctx)
         {
             return TaskResult.empty(request);
         }

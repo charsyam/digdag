@@ -15,6 +15,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import io.digdag.spi.CommandExecutor;
 import io.digdag.spi.CommandLogger;
+import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;
 import io.digdag.spi.Operator;
@@ -61,7 +62,7 @@ public class ShOperatorFactory
         }
 
         @Override
-        public TaskResult runTask()
+        public TaskResult runTask(TaskExecutionContext ctx)
         {
             Config params = request.getConfig()
                 .mergeDefault(request.getConfig().getNestedOrGetEmpty("sh"));
