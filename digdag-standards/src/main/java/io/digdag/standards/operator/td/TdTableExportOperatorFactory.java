@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import com.google.inject.Inject;
+import io.digdag.spi.TaskExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.digdag.spi.TaskRequest;

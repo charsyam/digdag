@@ -25,6 +25,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+
+import io.digdag.spi.SecretAccessPolicy;
+import io.digdag.spi.SecretStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.beust.jcommander.Parameter;
@@ -620,9 +623,10 @@ public class Run
                 TaskCallbackApi callback, WorkspaceManager workspaceManager,
                 WorkflowCompiler compiler, ConfigFactory cf,
                 ConfigEvalEngine evalEngine, OperatorRegistry registry,
-                Run cmd, YamlMapper yamlMapper)
+                Run cmd, YamlMapper yamlMapper,
+                SecretStore secretStore, SecretAccessPolicy secretAccessPolicy)
         {
-            super(config, agentId, callback, workspaceManager, compiler, cf, evalEngine, registry);
+            super(config, agentId, callback, workspaceManager, compiler, cf, evalEngine, registry, secretStore, secretAccessPolicy);
             this.cf = cf;
             this.cmd = cmd;
             this.yamlMapper = yamlMapper;

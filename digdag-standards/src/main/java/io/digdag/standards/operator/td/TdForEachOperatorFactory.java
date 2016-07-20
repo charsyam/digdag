@@ -15,6 +15,7 @@ import io.digdag.core.Limits;
 import io.digdag.core.workflow.TaskLimitExceededException;
 import io.digdag.spi.Operator;
 import io.digdag.spi.OperatorFactory;
+import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskExecutionException;
 import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;

@@ -4,6 +4,7 @@ import java.util.List;
 import java.nio.file.Path;
 import com.google.inject.Inject;
 import com.google.common.collect.Iterables;
+import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;
 import io.digdag.spi.Operator;

@@ -6,6 +6,7 @@ import java.nio.file.Path;
 
 import com.google.inject.Inject;
 import com.google.common.base.Optional;
+import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;
 import io.digdag.spi.Operator;

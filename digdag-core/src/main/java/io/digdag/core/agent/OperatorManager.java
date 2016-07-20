@@ -39,6 +39,8 @@ public class OperatorManager
     private final ConfigFactory cf;
     private final ConfigEvalEngine evalEngine;
     private final OperatorRegistry registry;
+    private final SecretStore secretStore;
+    private final SecretAccessPolicy secretAccessPolicy;
 
     private final ScheduledExecutorService heartbeatScheduler;
     private final ConcurrentHashMap<Long, TaskRequest> runningTaskMap = new ConcurrentHashMap<>();  // {taskId => TaskRequest}
@@ -47,7 +49,8 @@ public class OperatorManager
     public OperatorManager(AgentConfig agentConfig, AgentId agentId,
             TaskCallbackApi callback, WorkspaceManager workspaceManager,
             WorkflowCompiler compiler, ConfigFactory cf,
-            ConfigEvalEngine evalEngine, OperatorRegistry registry)
+            ConfigEvalEngine evalEngine, OperatorRegistry registry,
+            SecretStore secretStore, SecretAccessPolicy secretAccessPolicy)
     {
         this.agentConfig = agentConfig;
         this.agentId = agentId;
@@ -58,6 +61,8 @@ public class OperatorManager
         this.evalEngine = evalEngine;
 
         this.registry = registry;
+        this.secretStore = secretStore;
+        this.secretAccessPolicy = secretAccessPolicy;
 
         this.heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
@@ -253,8 +258,13 @@ public class OperatorManager
 
         Operator operator = factory.newTaskExecutor(workspacePath, mergedRequest);
 
-        // TODO
-        TaskExecutionContext taskExecutionContext = new DefaultTaskExecutionContext();
+        Config secretsConfig = mergedRequest.getConfig().getNested("_secrets");
+
+        List<String> operatorSelectors = operator.secretSelectors();
+
+        DefaultSecretProvider secretProvider = new DefaultSecretProvider(factory.getType(), secretAccessPolicy, secretsConfig, operatorSelectors, secretStore);
+
+        TaskExecutionContext taskExecutionContext = new DefaultTaskExecutionContext(secretProvider);
 
         return operator.run(taskExecutionContext);
     }
