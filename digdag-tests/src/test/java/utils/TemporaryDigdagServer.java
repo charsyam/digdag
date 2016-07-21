@@ -49,18 +49,15 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static utils.TestUtils.configFactory;
-import static utils.TestUtils.findFreePort;
-import static utils.TestUtils.main;
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static utils.TestUtils.configFactory;
+import static utils.TestUtils.main;
 import static utils.TestUtils.objectMapper;
 
 public class TemporaryDigdagServer
@@ -272,6 +269,8 @@ public class TemporaryDigdagServer
 
         if (inProcess) {
             executor.execute(() -> {
+                OutputStream out = fanout(this.out, System.out);
+                OutputStream err = fanout(this.err, System.err);
                 if (version.isPresent()) {
                     main(version.get(), args, out, err);
                 }
@@ -350,6 +349,48 @@ public class TemporaryDigdagServer
         if (!up) {
             fail("Server failed to come up.\nout:\n" + out.toString("UTF-8") + "\nerr:\n" + err.toString("UTF-8"));
         }
+    }
+
+    private static OutputStream fanout(OutputStream... outputStreams)
+    {
+        return new OutputStream()
+        {
+            @Override
+            public void write(int b)
+                    throws IOException
+            {
+                for (OutputStream outputStream : outputStreams) {
+                    outputStream.write(b);
+                }
+            }
+
+            @Override
+            public void write(byte[] b)
+                    throws IOException
+            {
+                for (OutputStream outputStream : outputStreams) {
+                    outputStream.write(b);
+                }
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len)
+                    throws IOException
+            {
+                for (OutputStream outputStream : outputStreams) {
+                    outputStream.write(b, off, len);
+                }
+            }
+
+            @Override
+            public void flush()
+                    throws IOException
+            {
+                for (OutputStream outputStream : outputStreams) {
+                    outputStream.flush();
+                }
+            }
+        };
     }
 
     private void copy(InputStream in, List<OutputStream> outs)

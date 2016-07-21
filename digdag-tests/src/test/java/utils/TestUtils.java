@@ -26,6 +26,7 @@ import utils.NopDispatcher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.ServerSocket;
@@ -87,24 +88,23 @@ public class TestUtils
     {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final ByteArrayOutputStream err = new ByteArrayOutputStream();
-        return main(localVersion, args, out, err);
+        int code = main(localVersion, args, out, err);
+        return CommandStatus.of(code, out.toByteArray(), err.toByteArray());
     }
 
-    public static CommandStatus main(Version localVersion, Collection<String> args, ByteArrayOutputStream out, ByteArrayOutputStream err)
+    public static int main(Version localVersion, Collection<String> args, OutputStream out, OutputStream err)
     {
-        final int code;
         try (
                 PrintStream outp = new PrintStream(out, true, "UTF-8");
                 PrintStream errp = new PrintStream(err, true, "UTF-8");
         ) {
-            code = new Main(localVersion, outp, errp).cli(args.stream().toArray(String[]::new));
+            return new Main(localVersion, outp, errp).cli(args.stream().toArray(String[]::new));
         }
         catch (RuntimeException | UnsupportedEncodingException e) {
             e.printStackTrace();
             Assert.fail();
             throw Throwables.propagate(e);
         }
-        return CommandStatus.of(code, out.toByteArray(), err.toByteArray());
     }
 
     public static void copyResource(String resource, Path dest)

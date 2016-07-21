@@ -27,8 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
 import io.digdag.spi.SecretAccessPolicy;
-import io.digdag.spi.SecretProvider;
-import io.digdag.spi.SecretStore;
+import io.digdag.spi.SecretStoreProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.beust.jcommander.Parameter;
@@ -220,7 +219,7 @@ public class Run
             .setSystemPlugins(loadSystemPlugins(systemProps))
             .addModules(binder -> {
                 binder.bind(SecretAccessPolicy.class).to(LocalSecretAccessPolicy.class).in(Scopes.SINGLETON);
-                binder.bind(SecretStore.class).to(LocalSecretStore.class).in(Scopes.SINGLETON);
+                binder.bind(SecretStoreProvider.class).to(LocalSecretStoreProvider.class).in(Scopes.SINGLETON);
                 binder.bind(ResumeStateManager.class).in(Scopes.SINGLETON);
                 binder.bind(YamlMapper.class).in(Scopes.SINGLETON);  // used by ResumeStateManager
                 binder.bind(Run.class).toInstance(this);  // used by OperatorManagerWithSkip
@@ -625,9 +624,9 @@ public class Run
                 WorkflowCompiler compiler, ConfigFactory cf,
                 ConfigEvalEngine evalEngine, OperatorRegistry registry,
                 Run cmd, YamlMapper yamlMapper,
-                SecretStore secretStore, SecretAccessPolicy secretAccessPolicy)
+                SecretStoreProvider secretStoreProvider, SecretAccessPolicy secretAccessPolicy)
         {
-            super(config, agentId, callback, workspaceManager, compiler, cf, evalEngine, registry, secretStore, secretAccessPolicy);
+            super(config, agentId, callback, workspaceManager, compiler, cf, evalEngine, registry, secretStoreProvider, secretAccessPolicy);
             this.cf = cf;
             this.cmd = cmd;
             this.yamlMapper = yamlMapper;

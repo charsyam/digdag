@@ -11,8 +11,10 @@ import io.digdag.core.log.TaskLogger;
 import io.digdag.core.workflow.WorkflowCompiler;
 import io.digdag.spi.Operator;
 import io.digdag.spi.OperatorFactory;
+import io.digdag.spi.SecretAccessContext;
 import io.digdag.spi.SecretAccessPolicy;
 import io.digdag.spi.SecretStore;
+import io.digdag.spi.SecretStoreProvider;
 import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskExecutionException;
 import io.digdag.spi.TaskRequest;
@@ -50,7 +52,7 @@ public class OperatorManager
     private final ConfigFactory cf;
     private final ConfigEvalEngine evalEngine;
     private final OperatorRegistry registry;
-    private final SecretStore secretStore;
+    private final SecretStoreProvider secretStoreProvider;
     private final SecretAccessPolicy secretAccessPolicy;
 
     private final ScheduledExecutorService heartbeatScheduler;
@@ -61,7 +63,7 @@ public class OperatorManager
             TaskCallbackApi callback, WorkspaceManager workspaceManager,
             WorkflowCompiler compiler, ConfigFactory cf,
             ConfigEvalEngine evalEngine, OperatorRegistry registry,
-            SecretStore secretStore, SecretAccessPolicy secretAccessPolicy)
+            SecretStoreProvider secretStoreProvider, SecretAccessPolicy secretAccessPolicy)
     {
         this.agentConfig = agentConfig;
         this.agentId = agentId;
@@ -72,7 +74,7 @@ public class OperatorManager
         this.evalEngine = evalEngine;
 
         this.registry = registry;
-        this.secretStore = secretStore;
+        this.secretStoreProvider = secretStoreProvider;
         this.secretAccessPolicy = secretAccessPolicy;
 
         this.heartbeatScheduler = Executors.newSingleThreadScheduledExecutor(
@@ -269,13 +271,24 @@ public class OperatorManager
 
         Operator operator = factory.newTaskExecutor(workspacePath, mergedRequest);
 
+        SecretStore secretStore = secretStoreProvider.getSecretStore(mergedRequest.getSiteId());
+
         Config grants = mergedRequest.getConfig().getNestedOrGetEmpty("_secrets");
 
         SecretFilter operatorSecretFilter = SecretFilter.of(
                 operator.secretSelectors().stream().map(SecretSelector::of).collect(Collectors.toList()));
 
+        SecretAccessContext secretContext = SecretAccessContext.builder()
+                .siteId(mergedRequest.getSiteId())
+                .projectId(mergedRequest.getProjectId())
+                .revision(mergedRequest.getRevision().get())
+                .workflowName(mergedRequest.getWorkflowName())
+                .taskName(mergedRequest.getTaskName())
+                .operatorType(type)
+                .build();
+
         DefaultSecretProvider secretProvider = new DefaultSecretProvider(
-                factory.getType(), secretAccessPolicy, grants, operatorSecretFilter, secretStore);
+                secretContext, secretAccessPolicy, grants, operatorSecretFilter, secretStore);
 
         TaskExecutionContext taskExecutionContext = new DefaultTaskExecutionContext(secretProvider);
 

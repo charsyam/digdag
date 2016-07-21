@@ -5,9 +5,12 @@ import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.google.inject.Inject;
 import io.digdag.client.config.ConfigException;
+import io.digdag.core.database.DatabaseSecretStoreManager;
 import io.digdag.core.repository.ModelValidationException;
 import io.digdag.core.repository.ResourceConflictException;
 import io.digdag.core.repository.ResourceNotFoundException;
+import io.digdag.spi.SecretAccessPolicy;
+import io.digdag.spi.SecretStoreProvider;
 import io.digdag.spi.StorageFileNotFoundException;
 import io.digdag.guice.rs.GuiceRsModule;
 import io.digdag.server.rs.AttemptResource;
@@ -43,6 +46,12 @@ public class ServerModule
         bindResources(builder);
         bindAuthenticator();
         bindExceptionhandlers(builder);
+        bindSecrets();
+    }
+
+    protected void bindSecrets() {
+        binder().bind(SecretStoreProvider.class).to(DatabaseSecretStoreManager.class);
+        binder().bind(SecretAccessPolicy.class).to(DefaultSecretAccessPolicy.class);
     }
 
     protected void bindResources(ApplicationBindingBuilder builder)

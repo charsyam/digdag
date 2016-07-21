@@ -3,6 +3,7 @@ package io.digdag.core.agent;
 import io.digdag.client.config.Config;
 import io.digdag.client.config.ConfigFactory;
 import io.digdag.core.config.YamlConfigLoader;
+import io.digdag.spi.SecretAccessContext;
 import io.digdag.spi.SecretAccessDeniedException;
 import io.digdag.spi.SecretAccessPolicy;
 import io.digdag.spi.SecretStore;
@@ -14,6 +15,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import static io.digdag.core.database.DatabaseTestingUtils.createConfig;
@@ -21,6 +23,7 @@ import static io.digdag.core.database.DatabaseTestingUtils.createConfigFactory;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -29,8 +32,6 @@ import static org.mockito.Mockito.when;
 @RunWith(JUnitParamsRunner.class)
 public class DefaultSecretProviderTest
 {
-    private static final String OPERATOR_TYPE = "test-operator";
-
     private static final YamlConfigLoader YAML_CONFIG_LOADER = new YamlConfigLoader();
     private static final ConfigFactory CONFIG_FACTORY = createConfigFactory();
 
@@ -39,6 +40,7 @@ public class DefaultSecretProviderTest
     @Mock SecretAccessPolicy secretAccessPolicy;
     @Mock SecretStore secretStore;
     @Mock SecretFilter secretFilter;
+    @Mock SecretAccessContext secretAccessContext;
 
     @Before
     public void setUp()
@@ -56,7 +58,7 @@ public class DefaultSecretProviderTest
 
         when(secretFilter.match(anyString())).thenReturn(false);
 
-        DefaultSecretProvider provider = new DefaultSecretProvider(OPERATOR_TYPE, secretAccessPolicy, grants, secretFilter, secretStore);
+        DefaultSecretProvider provider = new DefaultSecretProvider(secretAccessContext, secretAccessPolicy, grants, secretFilter, secretStore);
 
         try {
             provider.getSecret(key);
@@ -80,17 +82,17 @@ public class DefaultSecretProviderTest
         String key = "foo";
         Config grants = createConfig();
 
-        when(secretStore.getSecret(key)).thenReturn(expectedSecret);
-        when(secretAccessPolicy.isSecretAccessible(anyString(), anyString())).thenReturn(true);
+        when(secretStore.getSecret(secretAccessContext, key)).thenReturn(expectedSecret);
+        when(secretAccessPolicy.isSecretAccessible(any(SecretAccessContext.class), anyString())).thenReturn(true);
         when(secretFilter.match(key)).thenReturn(true);
 
-        DefaultSecretProvider provider = new DefaultSecretProvider(OPERATOR_TYPE, secretAccessPolicy, grants, secretFilter, secretStore);
+        DefaultSecretProvider provider = new DefaultSecretProvider(secretAccessContext, secretAccessPolicy, grants, secretFilter, secretStore);
 
         String secret = provider.getSecret(key);
 
         verify(secretFilter).match(key);
-        verify(secretAccessPolicy).isSecretAccessible(OPERATOR_TYPE, key);
-        verify(secretStore).getSecret(key);
+        verify(secretAccessPolicy).isSecretAccessible(secretAccessContext, key);
+        verify(secretStore).getSecret(secretAccessContext, key);
 
         assertThat(secret, is(expectedSecret));
     }
@@ -109,19 +111,19 @@ public class DefaultSecretProviderTest
     {
         String expectedSecret = "the-secret";
 
-        when(secretStore.getSecret(expectedKey)).thenReturn(expectedSecret);
-        when(secretAccessPolicy.isSecretAccessible(anyString(), anyString())).thenReturn(false);
+        when(secretStore.getSecret(secretAccessContext, expectedKey)).thenReturn(expectedSecret);
+        when(secretAccessPolicy.isSecretAccessible(any(SecretAccessContext.class), anyString())).thenReturn(false);
         when(secretFilter.match(key)).thenReturn(true);
 
         Config grants = YAML_CONFIG_LOADER.loadString(grantsYaml).toConfig(CONFIG_FACTORY);
 
-        DefaultSecretProvider provider = new DefaultSecretProvider(OPERATOR_TYPE, secretAccessPolicy, grants, secretFilter, secretStore);
+        DefaultSecretProvider provider = new DefaultSecretProvider(secretAccessContext, secretAccessPolicy, grants, secretFilter, secretStore);
 
         String secret = provider.getSecret(key);
 
         verify(secretFilter).match(key);
         verifyNoMoreInteractions(secretAccessPolicy);
-        verify(secretStore).getSecret(expectedKey);
+        verify(secretStore).getSecret(secretAccessContext, expectedKey);
 
         assertThat(secret, is(expectedSecret));
     }
