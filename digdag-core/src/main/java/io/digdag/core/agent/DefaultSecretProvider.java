@@ -21,16 +21,16 @@ class DefaultSecretProvider
     private final String operatorType;
     private final SecretAccessPolicy secretAccessPolicy;
     private final Config grants;
-    private final List<String> operatorSelectors;
+    private final SecretFilter operatorSecretFilter;
     private final SecretStore secretStore;
 
     DefaultSecretProvider(
-            String operatorType, SecretAccessPolicy secretAccessPolicy, Config grants, List<String> operatorSelectors, SecretStore secretStore)
+            String operatorType, SecretAccessPolicy secretAccessPolicy, Config grants, SecretFilter operatorSecretFilter, SecretStore secretStore)
     {
         this.operatorType = operatorType;
         this.secretAccessPolicy = secretAccessPolicy;
         this.grants = grants;
-        this.operatorSelectors = operatorSelectors;
+        this.operatorSecretFilter = operatorSecretFilter;
         this.secretStore = secretStore;
     }
 
@@ -44,8 +44,8 @@ class DefaultSecretProvider
         List<String> segments = Splitter.on('.').splitToList(key);
         segments.forEach(segment -> Preconditions.checkArgument(!Strings.isNullOrEmpty(segment)));
 
-        // Only allow operatorType to access secrets covered by pre-declared selectors
-        if (!match(key, operatorSelectors)) {
+        // Only allow operatorType to access pre-declared secrets
+        if (!operatorSecretFilter.match(key)) {
             throw new SecretAccessDeniedException(key);
         }
 
@@ -100,27 +100,5 @@ class DefaultSecretProvider
     private String fetchSecret(String key)
     {
         return secretStore.getSecret(key);
-    }
-
-    private static boolean match(String key, List<String> selectors)
-    {
-        for (String operatorSelector : selectors) {
-            String prefix = selectorPrefix(operatorSelector);
-            if (key.startsWith(prefix)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static String selectorPrefix(String selector)
-    {
-        int i = selector.indexOf(".*");
-        if (i == -1) {
-            return selector;
-        }
-        else {
-            return selector.substring(0, i);
-        }
     }
 }

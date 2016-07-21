@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
 import io.digdag.spi.SecretAccessPolicy;
+import io.digdag.spi.SecretProvider;
 import io.digdag.spi.SecretStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +38,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Scopes;
@@ -75,7 +75,6 @@ import io.digdag.core.workflow.TaskMatchPattern;
 import io.digdag.core.config.ConfigLoaderManager;
 import io.digdag.spi.TaskRequest;
 import io.digdag.spi.TaskResult;
-import io.digdag.spi.OperatorFactory;
 import io.digdag.spi.ScheduleTime;
 import io.digdag.spi.Scheduler;
 import io.digdag.client.config.Config;
@@ -220,6 +219,8 @@ public class Run
         Injector injector = new DigdagEmbed.Bootstrap()
             .setSystemPlugins(loadSystemPlugins(systemProps))
             .addModules(binder -> {
+                binder.bind(SecretAccessPolicy.class).to(LocalSecretAccessPolicy.class).in(Scopes.SINGLETON);
+                binder.bind(SecretStore.class).to(LocalSecretStore.class).in(Scopes.SINGLETON);
                 binder.bind(ResumeStateManager.class).in(Scopes.SINGLETON);
                 binder.bind(YamlMapper.class).in(Scopes.SINGLETON);  // used by ResumeStateManager
                 binder.bind(Run.class).toInstance(this);  // used by OperatorManagerWithSkip

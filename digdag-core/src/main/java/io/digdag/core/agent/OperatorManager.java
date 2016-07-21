@@ -1,30 +1,41 @@
 package io.digdag.core.agent;
 
-import java.util.List;
-import java.util.Set;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
+import io.digdag.client.config.Config;
+import io.digdag.client.config.ConfigException;
+import io.digdag.client.config.ConfigFactory;
+import io.digdag.core.log.LogLevel;
+import io.digdag.core.log.TaskContextLogging;
+import io.digdag.core.log.TaskLogger;
+import io.digdag.core.workflow.WorkflowCompiler;
+import io.digdag.spi.Operator;
+import io.digdag.spi.OperatorFactory;
+import io.digdag.spi.SecretAccessPolicy;
+import io.digdag.spi.SecretStore;
+import io.digdag.spi.TaskExecutionContext;
+import io.digdag.spi.TaskExecutionException;
+import io.digdag.spi.TaskRequest;
+import io.digdag.spi.TaskResult;
+import io.digdag.spi.TemplateException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.io.IOException;
-import java.nio.file.Path;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import com.google.inject.Inject;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import io.digdag.client.config.Config;
-import io.digdag.client.config.ConfigException;
-import io.digdag.client.config.ConfigFactory;
-import io.digdag.core.workflow.WorkflowCompiler;
-import io.digdag.core.log.TaskLogger;
-import io.digdag.core.log.TaskContextLogging;
-import io.digdag.core.log.LogLevel;
-import io.digdag.spi.*;
+
 import static io.digdag.spi.TaskExecutionException.buildExceptionErrorConfig;
 
 public class OperatorManager
@@ -251,18 +262,20 @@ public class OperatorManager
 
     protected TaskResult callExecutor(Path workspacePath, String type, TaskRequest mergedRequest)
     {
-        OperatorFactory factory = registry.get(mergedRequest ,type);
+        OperatorFactory factory = registry.get(mergedRequest, type);
         if (factory == null) {
             throw new ConfigException("Unknown task type: " + type);
         }
 
         Operator operator = factory.newTaskExecutor(workspacePath, mergedRequest);
 
-        Config secretsConfig = mergedRequest.getConfig().getNested("_secrets");
+        Config grants = mergedRequest.getConfig().getNestedOrGetEmpty("_secrets");
 
-        List<String> operatorSelectors = operator.secretSelectors();
+        SecretFilter operatorSecretFilter = SecretFilter.of(
+                operator.secretSelectors().stream().map(SecretSelector::of).collect(Collectors.toList()));
 
-        DefaultSecretProvider secretProvider = new DefaultSecretProvider(factory.getType(), secretAccessPolicy, secretsConfig, operatorSelectors, secretStore);
+        DefaultSecretProvider secretProvider = new DefaultSecretProvider(
+                factory.getType(), secretAccessPolicy, grants, operatorSecretFilter, secretStore);
 
         TaskExecutionContext taskExecutionContext = new DefaultTaskExecutionContext(secretProvider);
 

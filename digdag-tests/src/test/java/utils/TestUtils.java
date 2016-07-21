@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Resources;
 import io.digdag.cli.Main;
+import io.digdag.cli.YamlMapper;
 import io.digdag.client.DigdagClient;
 import io.digdag.client.api.JacksonTimeModule;
 import io.digdag.client.api.RestLogFileHandle;
@@ -331,6 +332,11 @@ public class TestUtils
     public static ObjectMapper objectMapper()
     {
         return OBJECT_MAPPER;
+    }
+
+    public static YamlMapper yamlMapper()
+    {
+        return new YamlMapper(OBJECT_MAPPER);
     }
 
     public static ConfigFactory configFactory()
