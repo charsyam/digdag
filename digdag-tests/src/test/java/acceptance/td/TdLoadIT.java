@@ -57,7 +57,7 @@ public class TdLoadIT
         projectDir = folder.getRoot().toPath().toAbsolutePath().normalize();
         config = folder.newFile().toPath();
         Files.write(config, asList(
-                "params.td.apikey = " + TD_API_KEY,
+                "secrets.td.apikey = " + TD_API_KEY,
                 "params.td.database = " + database,
                 "params.td_load_sftp_user = " + TD_LOAD_IT_SFTP_USER,
                 "params.td_load_sftp_password = " + TD_LOAD_IT_SFTP_PASSWORD

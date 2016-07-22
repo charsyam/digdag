@@ -3,11 +3,11 @@ package io.digdag.cli;
 import com.google.inject.Inject;
 import io.digdag.client.config.Config;
 import io.digdag.spi.SecretAccessContext;
+import io.digdag.spi.SecretControlStore;
 import io.digdag.spi.SecretStore;
 import io.digdag.spi.SecretStoreProvider;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toMap;
 
@@ -36,6 +36,25 @@ class LocalSecretStoreProvider
             public String getSecret(SecretAccessContext context, String key)
             {
                 return secrets.get(key);
+            }
+        };
+    }
+
+    @Override
+    public SecretControlStore getSecretStoreControl(int siteId)
+    {
+        return new SecretControlStore()
+        {
+            @Override
+            public void setProjectSecret(int projectId, String key, String value)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void deleteProjectSecret(int projectId, String key)
+            {
+                throw new UnsupportedOperationException();
             }
         };
     }

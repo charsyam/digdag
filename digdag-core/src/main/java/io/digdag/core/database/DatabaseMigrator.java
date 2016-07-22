@@ -626,11 +626,36 @@ public class DatabaseMigrator
         }
     };
 
+    private final Migration MigrateAddSecretsTable = new Migration()
+    {
+        @Override
+        public String getVersion()
+        {
+            return "20160722123456";
+        }
+
+        @Override
+        public void migrate(Handle handle)
+        {
+            handle.update(
+                    new CreateTableBuilder("secrets")
+                            .addLong("site_id", "not null")
+                            .addLong("project_id", "not null references projects (id)")
+                            .addMediumText("key", "not null")
+                            .addLongText("value", "not null")
+                            .addTimestamp("updated_at", "not null")
+                            .build());
+
+            handle.update("create index secrets_on_site_id_and_project_id_and_key on secrets (site_id, project_id, key)");
+        }
+    };
+
     private final Migration[] migrations = {
         MigrateCreateTables,
         MigrateSessionsOnProjectIdIndexToDesc,
         MigrateCreateResumingTasks,
         MigrateMakeProjectsDeletable,
         MigrateAddUserInfoColumnToRevisions,
+        MigrateAddSecretsTable
     };
 }

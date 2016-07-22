@@ -1,6 +1,7 @@
 package io.digdag.standards.operator.td;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.treasuredata.client.model.TDJob;
 import com.treasuredata.client.model.TDJobRequest;
@@ -10,6 +11,7 @@ import io.digdag.client.config.ConfigElement;
 import io.digdag.client.config.ConfigException;
 import io.digdag.spi.Operator;
 import io.digdag.spi.OperatorFactory;
+import io.digdag.spi.SecretProvider;
 import io.digdag.spi.TaskExecutionContext;
 import io.digdag.spi.TaskExecutionException;
 import io.digdag.spi.TaskRequest;
@@ -22,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import static com.treasuredata.client.model.TDJob.Status.SUCCESS;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -85,9 +88,21 @@ public class TdWaitOperatorFactory
         }
 
         @Override
+        public List<String> secretSelectors()
+        {
+            return ImmutableList.of("td.apikey");
+        }
+
+        @Override
         public TaskResult runTask(TaskExecutionContext ctx)
         {
-            try (TDOperator op = TDOperator.fromConfig(params)) {
+            String apikey = ctx.secrets().getSecret("td.apikey");
+
+            if (apikey == null) {
+                throw new TaskExecutionException("Missing td.apikey secret", ConfigElement.empty());
+            }
+
+            try (TDOperator op = TDOperator.fromConfig(params, apikey)) {
 
                 // Start the query job
                 if (!existingJobId.isPresent()) {

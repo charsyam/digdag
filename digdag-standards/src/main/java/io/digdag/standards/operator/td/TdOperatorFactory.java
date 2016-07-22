@@ -155,9 +155,11 @@ public class TdOperatorFactory
                 throw new ConfigException("Parameter 'database' is empty");
             }
 
-            SecretProvider secretProvider = ctx.secrets();
+            String apikey = ctx.secrets().getSecret("td.apikey");
 
-            String apikey = secretProvider.getSecret("td.apikey");
+            if (apikey == null) {
+                throw new TaskExecutionException("Missing td.apikey secret", ConfigElement.empty());
+            }
 
             try (TDOperator op = TDOperator.fromConfig(params, apikey)) {
 

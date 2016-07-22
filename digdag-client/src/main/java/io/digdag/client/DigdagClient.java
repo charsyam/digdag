@@ -1,8 +1,8 @@
 package io.digdag.client;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.google.common.base.Optional;
@@ -531,6 +531,17 @@ public class DigdagClient implements AutoCloseable
     {
         return doGet(new GenericType<Map<String, Object>>() {},
                 target("/api/version"));
+    }
+
+    public void setProjectSecret(int projectId, String key, String value)
+    {
+        WebTarget webTarget = target("/projects/{id}/secrets/{key}")
+                .resolveTemplate("id", projectId)
+                .resolveTemplate("key", key);
+        webTarget
+            .request()
+            .headers(headers.get())
+            .put(Entity.entity(value, "text/plain"));
     }
 
     private WebTarget target(String path)

@@ -50,7 +50,7 @@ public class TdRunIT
         assumeThat(TD_API_KEY, not(isEmptyOrNullString()));
         projectDir = folder.getRoot().toPath().toAbsolutePath().normalize();
         config = folder.newFile().toPath();
-        Files.write(config, ("params.td.apikey = " + TD_API_KEY).getBytes("UTF-8"));
+        Files.write(config, ("secrets.td.apikey = " + TD_API_KEY).getBytes("UTF-8"));
         outfile = projectDir.resolve("outfile");
 
         client = TDClient.newBuilder(false)

@@ -1,5 +1,6 @@
 package acceptance.td;
 
+import io.digdag.client.DigdagClient;
 import utils.CommandStatus;
 import com.google.common.collect.ImmutableMap;
 import com.treasuredata.client.TDClient;
@@ -28,6 +29,7 @@ import static utils.TestUtils.createProject;
 import static utils.TestUtils.expect;
 import static utils.TestUtils.main;
 import static utils.TestUtils.pushAndStart;
+import static utils.TestUtils.pushProject;
 import static utils.TestUtils.runWorkflow;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -47,17 +49,21 @@ public class TdWaitIT
     @Rule
     public TemporaryDigdagServer server = TemporaryDigdagServer.builder()
             .configuration(
-                    "params.td.apikey = " + TD_API_KEY,
+                    "secrets.td.apikey = " + TD_API_KEY,
                     "config.td.wait.min_poll_interval = 5s"
             )
             .build();
 
     protected Path projectDir;
+    protected String projectName;
+    protected int projectId;
 
     protected String tempDatabase;
 
     protected TDClient tdClient;
     protected Path outfile;
+
+    protected DigdagClient digdagClient;
 
     @Before
     public void setUp()
@@ -66,6 +72,8 @@ public class TdWaitIT
         assumeThat(TD_API_KEY, not(isEmptyOrNullString()));
         projectDir = folder.getRoot().toPath();
         createProject(projectDir);
+        projectName = projectDir.getFileName().toString();
+        projectId = pushProject(server.endpoint(), projectDir, projectName);
 
         tdClient = TDClient.newBuilder(false).setApiKey(TD_API_KEY).build();
         tempDatabase = "tmp_" + UUID.randomUUID().toString().replace("-", "_");
@@ -73,6 +81,13 @@ public class TdWaitIT
         tdClient.createDatabase(tempDatabase);
 
         outfile = folder.getRoot().toPath().resolve("outfile").toAbsolutePath().normalize();
+
+        digdagClient = DigdagClient.builder()
+                .host(server.host())
+                .port(server.port())
+                .build();
+
+        digdagClient.setProjectSecret(projectId, "td.apikey", TD_API_KEY);
     }
 
     @After
@@ -259,7 +274,6 @@ public class TdWaitIT
 
         addWorkflow(projectDir, "acceptance/td/td_wait/td_wait.dig");
         long attemptId = pushAndStart(server.endpoint(), projectDir, "td_wait", ImmutableMap.<String, String>builder()
-                .put("td.apikey", TD_API_KEY)
                 .put("database", tempDatabase)
                 .put("wait_poll_interval", "5s")
                 .put("wait_table", table)
@@ -282,7 +296,6 @@ public class TdWaitIT
 
         // Create the table (empty)
         runWorkflow("acceptance/td/td_wait/create_table.dig", ImmutableMap.of(
-                "td.apikey", TD_API_KEY,
                 "database", tempDatabase,
                 "table", table));
 
@@ -298,7 +311,6 @@ public class TdWaitIT
 
         // Insert a row
         runWorkflow("acceptance/td/td_wait/insert_into.dig", ImmutableMap.of(
-                "td.apikey", TD_API_KEY,
                 "database", tempDatabase,
                 "table", table,
                 "query", "select 1"));
@@ -318,7 +330,6 @@ public class TdWaitIT
 
         // Insert another row to trigger the workflow to complete
         runWorkflow("acceptance/td/td_wait/insert_into.dig", ImmutableMap.of(
-                "td.apikey", TD_API_KEY,
                 "database", tempDatabase,
                 "table", table,
                 "query", "select 1"));

@@ -1,6 +1,7 @@
 package io.digdag.standards.operator.td;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.treasuredata.client.model.TDJob;
 import com.treasuredata.client.model.TDJobRequest;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigInteger;
 import java.nio.file.Path;
+import java.util.List;
 
 import static com.treasuredata.client.model.TDJob.Status.SUCCESS;
 
@@ -87,9 +89,21 @@ public class TdWaitTableOperatorFactory
         }
 
         @Override
+        public List<String> secretSelectors()
+        {
+            return ImmutableList.of("td.apikey");
+        }
+
+        @Override
         public TaskResult runTask(TaskExecutionContext ctx)
         {
-            try (TDOperator op = TDOperator.fromConfig(params)) {
+            String apikey = ctx.secrets().getSecret("td.apikey");
+
+            if (apikey == null) {
+                throw new TaskExecutionException("Missing td.apikey secret", ConfigElement.empty());
+            }
+
+            try (TDOperator op = TDOperator.fromConfig(params, apikey)) {
 
                 // Check if table exists using rest api (if the query job has not yet been started)
                 if (!existingJobId.isPresent()) {

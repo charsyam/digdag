@@ -35,7 +35,7 @@ public class TdForEachIT
         assumeThat(TD_API_KEY, not(isEmptyOrNullString()));
         projectDir = folder.getRoot().toPath();
         config = folder.newFile().toPath();
-        Files.write(config, ("params.td.apikey = " + TD_API_KEY).getBytes("UTF-8"));
+        Files.write(config, ("secrets.td.apikey = " + TD_API_KEY).getBytes("UTF-8"));
     }
 
     @Test

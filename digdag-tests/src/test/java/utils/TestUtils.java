@@ -69,6 +69,8 @@ public class TestUtils
 
     public static final Pattern ATTEMPT_ID_PATTERN = Pattern.compile("\\s*attempt id:\\s*(\\d+)\\s*");
 
+    public static final Pattern PROJECT_ID_PATTERN = Pattern.compile("\\s*id:\\s*(\\d+)\\s*");
+
     public static CommandStatus main(String... args)
     {
         return main(buildVersion(), args);
@@ -268,21 +270,13 @@ public class TestUtils
     public static long pushAndStart(String endpoint, Path project, String workflow, Map<String, String> params)
             throws IOException
     {
-        String projectName = project.getFileName().toString();
-
         // Push the project
-        CommandStatus pushStatus = main("push",
-                "--project", project.toString(),
-                projectName,
-                "-c", "/dev/null",
-                "-e", endpoint,
-                "-r", "4711");
-        assertThat(pushStatus.errUtf8(), pushStatus.code(), is(0));
+        pushProject(endpoint, project, project.getFileName().toString());
 
         List<String> startCommand = new ArrayList<>(asList("start",
                 "-c", "/dev/null",
                 "-e", endpoint,
-                projectName, workflow,
+                project.getFileName().toString(), workflow,
                 "--session", "now"));
 
         params.forEach((k, v) -> startCommand.addAll(asList("-p", k + "=" + v)));
@@ -292,6 +286,20 @@ public class TestUtils
         assertThat(startStatus.errUtf8(), startStatus.code(), is(0));
 
         return getAttemptId(startStatus);
+    }
+
+    public static int pushProject(String endpoint, Path project, String projectName)
+    {
+        CommandStatus pushStatus = main("push",
+                "--project", project.toString(),
+                projectName,
+                "-c", "/dev/null",
+                "-e", endpoint);
+        assertThat(pushStatus.errUtf8(), pushStatus.code(), is(0));
+        Matcher matcher = PROJECT_ID_PATTERN.matcher(pushStatus.outUtf8());
+        boolean found = matcher.find();
+        assertThat(found, is(true));
+        return Integer.valueOf(matcher.group(1));
     }
 
     public static void addWorkflow(Path project, String resource)
@@ -307,7 +315,7 @@ public class TestUtils
         copyResource(resource, project.resolve(workflowName));
     }
 
-    public static void runWorkflow(String resource, ImmutableMap<String, String> params)
+    public static void runWorkflow(String resource, Map<String, String> params)
             throws IOException
     {
         Path workflow = Paths.get(resource);
