@@ -12,6 +12,8 @@ import java.io.Writer;
 import java.io.BufferedWriter;
 import java.io.StringWriter;
 import java.io.IOException;
+
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -140,6 +142,12 @@ public class TdOperatorFactory
         }
 
         @Override
+        public List<String> secretSelectors()
+        {
+            return ImmutableList.of("td.apikey");
+        }
+
+        @Override
         public TaskResult runTask(TaskExecutionContext ctx)
         {
             String database = params.get("database", String.class).trim();
@@ -149,7 +157,7 @@ public class TdOperatorFactory
 
             SecretProvider secretProvider = ctx.secrets();
 
-            String apikey = secretProvider.getSecret("apikey");
+            String apikey = secretProvider.getSecret("td.apikey");
 
             try (TDOperator op = TDOperator.fromConfig(params, apikey)) {
 

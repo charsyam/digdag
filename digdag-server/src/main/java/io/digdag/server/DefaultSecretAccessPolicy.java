@@ -11,7 +11,7 @@ public class DefaultSecretAccessPolicy
     @Inject
     public DefaultSecretAccessPolicy(Config systemConfig)
     {
-        
+
     }
 
     @Override

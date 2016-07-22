@@ -26,6 +26,8 @@ import java.nio.file.Paths;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
+import io.digdag.client.config.ConfigElement;
+import io.digdag.core.config.PropertyUtils;
 import io.digdag.spi.SecretAccessPolicy;
 import io.digdag.spi.SecretStoreProvider;
 import org.slf4j.Logger;
@@ -216,6 +218,7 @@ public class Run
         Properties systemProps = loadSystemProperties();
 
         Injector injector = new DigdagEmbed.Bootstrap()
+            .setSystemConfig(PropertyUtils.toConfigElement(systemProps))
             .setSystemPlugins(loadSystemPlugins(systemProps))
             .addModules(binder -> {
                 binder.bind(SecretAccessPolicy.class).to(LocalSecretAccessPolicy.class).in(Scopes.SINGLETON);

@@ -75,7 +75,7 @@ public class TdIT
         assumeThat(TD_API_KEY, not(isEmptyOrNullString()));
         projectDir = folder.getRoot().toPath().toAbsolutePath().normalize();
         config = folder.newFile().toPath();
-        Files.write(config, asList("params.td.apikey = " + TD_API_KEY));
+        Files.write(config, asList("secrets.td.apikey = " + TD_API_KEY));
         outfile = projectDir.resolve("outfile");
 
         client = TDClient.newBuilder(false)
